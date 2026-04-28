@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-title" content="CHRONO">
   <link rel="manifest" href="manifest.json">
   <title>CHRONO</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Fredoka+One&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #050508;
@@ -238,6 +238,88 @@
       white-space: nowrap; z-index: 200;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    /* ── KAWAI MODE */
+    body.kawai { background: #fff5f8 !important; background-image: none !important; }
+    body.kawai::before, body.kawai::after { display: none; }
+    body.kawai .title { color: #ff69b4; text-shadow: 0 0 10px rgba(255,105,180,0.3); animation: none; font-family: 'Fredoka One', cursive; letter-spacing: 0.15em; }
+    body.kawai .version, body.kawai .notif-status { color: #cc99b3; }
+    body.kawai .mode-tabs { border-color: transparent; }
+    body.kawai .tab { border-color: #ffd0e8; color: #cc99b3; font-family: 'Fredoka One', cursive; letter-spacing: 0.05em; }
+    body.kawai .tab.active { border-color: #ff69b4; color: #ff69b4; background: rgba(255,105,180,0.1); text-shadow: none; }
+    body.kawai .circle-wrapper { display: none; }
+    body.kawai .bottom-section { border-color: #ffd0e8; background: #fff5f8; }
+    body.kawai .section-header { color: #cc99b3; }
+
+    .kawai-time-display {
+      display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0;
+    }
+    .kawai-time {
+      font-family: 'Fredoka One', cursive; font-size: 3.8rem; color: #ff69b4;
+      text-shadow: 3px 3px 0 #ffb7d5; line-height: 1;
+    }
+    .kawai-time.finished { animation: kbounce 0.4s ease-in-out infinite alternate; }
+    @keyframes kbounce { to { transform: scale(1.08) rotate(3deg); } }
+    .kawai-phase { font-family: 'Fredoka One', cursive; font-size: 0.95rem; color: #cc99b3; }
+
+    /* Board */
+    .board-wrap { display: flex; flex-direction: column; align-items: center; width: 100%; }
+    .board-grid {
+      display: grid; grid-template-columns: repeat(4, 58px); grid-template-rows: repeat(3, 58px);
+      gap: 5px;
+    }
+    .case {
+      width: 58px; height: 58px; border-radius: 14px;
+      background: #ffe4ef; border: 2px solid #ffb7d5;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; position: relative; overflow: visible;
+      transition: background 0.3s, border-color 0.3s;
+    }
+    .case-num { position: absolute; top: 3px; left: 6px; font-family: 'Fredoka One', cursive; font-size: 0.55rem; color: #ffb7d5; line-height: 1; }
+    .case-emoji { font-size: 1.3rem; transition: opacity 0.2s; }
+    .case.visited { background: #ffd6e8; border-color: #ffaad0; }
+    .case.finish { background: #b5ead7; border-color: #82c9b0; }
+    .case.kirby-here { background: #ff69b4 !important; border-color: #ff1493 !important; box-shadow: 0 0 14px rgba(255,105,180,0.5); }
+    .kirby-on-case {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      animation: kirby-bob 0.6s ease-in-out infinite alternate; z-index: 2;
+    }
+    @keyframes kirby-bob { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+
+    /* Kawai controls */
+    .kawai-dur-config { display: flex; align-items: center; gap: 12px; transition: opacity 0.3s; }
+    .kawai-dur-config.locked { opacity: 0.3; pointer-events: none; }
+    .kawai-dur-btn {
+      background: #ff69b4; border: none; color: white;
+      font-family: 'Fredoka One', cursive; font-size: 1.2rem;
+      width: 32px; height: 32px; border-radius: 50%; cursor: pointer; transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center; line-height: 1;
+    }
+    .kawai-dur-btn:active { transform: scale(0.88); background: #e0559a; }
+    .kawai-dur-val { font-family: 'Fredoka One', cursive; font-size: 1rem; color: #ff69b4; min-width: 60px; text-align: center; }
+    .kawai-btn-main {
+      background: #ff69b4; border: none; color: white;
+      font-family: 'Fredoka One', cursive; font-size: 1.1rem; letter-spacing: 0.04em;
+      padding: 12px 34px; border-radius: 24px; cursor: pointer;
+      box-shadow: 0 4px 0 #cc4499; transition: all 0.12s;
+    }
+    .kawai-btn-main:active { transform: translateY(3px); box-shadow: 0 1px 0 #cc4499; }
+    .kawai-btn-reset {
+      background: white; border: 2px solid #ffb7d5; color: #ff69b4;
+      font-family: 'Fredoka One', cursive; font-size: 1rem;
+      padding: 10px 14px; border-radius: 20px; cursor: pointer; transition: all 0.12s;
+    }
+    .kawai-btn-reset:active { background: #ffe4ef; transform: scale(0.95); }
+
+    /* Food stash */
+    .food-stash {
+      min-height: 38px; display: flex; flex-wrap: wrap; gap: 4px;
+      align-items: center; justify-content: center;
+      padding: 8px 14px; border-radius: 14px;
+      background: #ffe4ef; border: 2px solid #ffb7d5; width: 100%;
+    }
+    .food-stash-empty { font-family: 'Fredoka One', cursive; font-size: 0.75rem; color: #cc99b3; }
+    .food-emoji { font-size: 1.5rem; animation: pop-in 0.35s cubic-bezier(0.68,-0.55,0.27,1.55); display: inline-block; }
+    @keyframes pop-in { from { transform: scale(0) rotate(-20deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
   </style>
 </head>
 <body>
@@ -342,7 +424,25 @@
     </div>
   </div>
 
-</main>
+  <!-- KAWAI -->
+  <div id="kawaiControls" style="display:none;width:100%">
+    <div class="kawai-time-display">
+      <div class="kawai-phase" id="kawaiPhase">EN ROUTE 🌸</div>
+      <div class="kawai-time" id="kawaiTime">25:00</div>
+    </div>
+    <div class="board-wrap" style="margin:10px 0 8px">
+      <div id="kawaiBoard"></div>
+    </div>
+    <div class="kawai-dur-config" id="kawaiDurConfig">
+      <button class="kawai-dur-btn" onclick="adjustKawai(-5)">−</button>
+      <div class="kawai-dur-val" id="kawaiDurDisplay">25 MIN</div>
+      <button class="kawai-dur-btn" onclick="adjustKawai(+5)">+</button>
+    </div>
+    <div class="controls" style="margin-top:8px">
+      <button class="kawai-btn-main" id="kawaiBtn" onclick="toggleKawai()">GO ! 🌸</button>
+      <button class="kawai-btn-reset" onclick="resetKawai()">↺</button>
+    </div>
+  </div>
 
 <!-- Stats FOCUS -->
 <section class="bottom-section" id="focusStats">
@@ -371,6 +471,13 @@
     <div class="stat-card"><div class="stat-val" id="tkDone">0</div><div class="stat-lbl">Terminées</div></div>
     <div class="stat-card"><div class="stat-val" id="tkLeft">0</div><div class="stat-lbl">Restantes</div></div>
     <div class="stat-card"><div class="stat-val" id="tkTime">0m</div><div class="stat-lbl">Estimé</div></div>
+  </div>
+</section>
+
+<section class="bottom-section" id="kawaiStats" style="display:none">
+  <div class="section-header">// RÉCOLTE DE KIRBY 🌸</div>
+  <div class="food-stash" id="foodStash">
+    <span class="food-stash-empty">Pas encore de nourriture...</span>
   </div>
 </section>
 
@@ -426,17 +533,21 @@ const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).pad
 
 // ── MODE SWITCH
 function switchMode(mode) {
-  if (mode === 'kawai') { toast('🌸 BIENTÔT — GOURMET RACE MODE'); return; }
   if (S.running) stop();
   S.mode = mode;
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['focus','sport','tasks'][i] === mode));
-  ['focus','sport','tasks'].forEach(m => {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['focus','sport','tasks','kawai'][i] === mode));
+  document.body.classList.toggle('kawai', mode === 'kawai');
+  ['focus','sport','tasks','kawai'].forEach(m => {
     document.getElementById(m+'Controls').style.display = m === mode ? '' : 'none';
-    document.getElementById(m === 'focus' ? 'focusStats' : m+'Stats').style.display = m === mode ? '' : 'none';
   });
+  document.getElementById('focusStats').style.display = mode === 'focus' ? '' : 'none';
+  document.getElementById('sportStats').style.display  = mode === 'sport' ? '' : 'none';
+  document.getElementById('tasksStats').style.display  = mode === 'tasks' ? '' : 'none';
+  document.getElementById('kawaiStats').style.display  = mode === 'kawai' ? '' : 'none';
   if (mode === 'focus') initFocus();
   if (mode === 'sport') initSport();
   if (mode === 'tasks') initTasks();
+  if (mode === 'kawai') initKawai();
 }
 function stop() { clearInterval(S.ticker); S.ticker = null; S.running = false; }
 
@@ -762,6 +873,167 @@ function updateTaskStats() {
   document.getElementById('tkDone').textContent = done;
   document.getElementById('tkLeft').textContent = left;
   document.getElementById('tkTime').textContent = h ? `${h}h${m}` : `${m}m`;
+}
+
+// ════════════════════════════════
+// KAWAI
+// ════════════════════════════════
+S.kawai = { durMin: 25, currentCase: 0, collected: [] };
+
+const BOARD_SIZE = 12;
+const BOARD_POS  = [[0,0],[1,0],[2,0],[3,0],[3,1],[2,1],[1,1],[0,1],[0,2],[1,2],[2,2],[3,2]];
+const FOOD_MAP   = { 2:'🍎', 4:'🍕', 7:'🍰', 9:'🍩' };
+
+function kirbySVG(eating=false) {
+  const mouth = eating
+    ? `<ellipse cx="25" cy="36" rx="8" ry="6" fill="#cc3366"/><ellipse cx="25" cy="36" rx="6" ry="4" fill="#ff6699"/>`
+    : `<path d="M 19 33 Q 25 39 31 33" stroke="#cc5577" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  return `<svg viewBox="0 0 50 54" width="38" height="42">
+    <ellipse cx="25" cy="28" rx="22" ry="20" fill="#FFB7C5"/>
+    <ellipse cx="17" cy="22" rx="4" ry="5" fill="#1a1a2e"/>
+    <ellipse cx="33" cy="22" rx="4" ry="5" fill="#1a1a2e"/>
+    <circle cx="19" cy="20" r="1.5" fill="white"/>
+    <circle cx="35" cy="20" r="1.5" fill="white"/>
+    <ellipse cx="11" cy="30" rx="5" ry="3.5" fill="#ff9bb5" opacity="0.7"/>
+    <ellipse cx="39" cy="30" rx="5" ry="3.5" fill="#ff9bb5" opacity="0.7"/>
+    ${mouth}
+    <ellipse cx="16" cy="48" rx="8" ry="5" fill="#FF6B8A"/>
+    <ellipse cx="34" cy="48" rx="8" ry="5" fill="#FF6B8A"/>
+  </svg>`;
+}
+
+function buildBoard() {
+  const board = document.getElementById('kawaiBoard');
+  board.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'board-grid';
+  for (let i = 0; i < BOARD_SIZE; i++) {
+    const [col, row] = BOARD_POS[i];
+    const cell = document.createElement('div');
+    cell.id = `kcase-${i}`;
+    cell.className = 'case' + (i === BOARD_SIZE-1 ? ' finish' : '');
+    cell.style.gridColumn = col + 1;
+    cell.style.gridRow    = row + 1;
+    const num = document.createElement('span');
+    num.className = 'case-num'; num.textContent = i + 1;
+    cell.appendChild(num);
+    const emoji = FOOD_MAP[i] || (i === BOARD_SIZE-1 ? '🏁' : '');
+    if (emoji) {
+      const e = document.createElement('span');
+      e.className = 'case-emoji'; e.id = `kfood-${i}`; e.textContent = emoji;
+      cell.appendChild(e);
+    }
+    grid.appendChild(cell);
+  }
+  board.appendChild(grid);
+}
+
+function placeKirby(idx, eating=false) {
+  document.querySelectorAll('.kirby-on-case').forEach(k => k.remove());
+  document.querySelectorAll('.case.kirby-here').forEach(c => c.classList.remove('kirby-here'));
+  const cell = document.getElementById(`kcase-${idx}`);
+  if (!cell) return;
+  cell.classList.add('kirby-here');
+  const wrap = document.createElement('div');
+  wrap.className = 'kirby-on-case';
+  wrap.innerHTML = kirbySVG(eating);
+  cell.appendChild(wrap);
+}
+
+function initKawai() {
+  stop();
+  S.kawai.currentCase = 0; S.kawai.collected = [];
+  S.total = S.kawai.durMin * 60; S.remaining = S.total;
+  buildBoard();
+  placeKirby(0);
+  document.getElementById('kawaiTime').textContent = fmt(S.remaining);
+  document.getElementById('kawaiTime').classList.remove('finished');
+  document.getElementById('kawaiPhase').textContent = 'EN ROUTE 🌸';
+  document.getElementById('kawaiBtn').textContent = 'GO ! 🌸';
+  document.getElementById('kawaiDurConfig').classList.remove('locked');
+  document.getElementById('kawaiDurDisplay').textContent = `${S.kawai.durMin} MIN`;
+  renderFoodStash();
+}
+
+function adjustKawai(d) {
+  if (S.running) return;
+  S.kawai.durMin = Math.max(1, Math.min(180, S.kawai.durMin + d));
+  document.getElementById('kawaiDurDisplay').textContent = `${S.kawai.durMin} MIN`;
+  initKawai();
+}
+
+function toggleKawai() {
+  if (S.remaining === 0) { resetKawai(); return; }
+  if (!S.running) {
+    S.running = true;
+    document.getElementById('kawaiBtn').textContent = 'PAUSE 🌙';
+    document.getElementById('kawaiDurConfig').classList.add('locked');
+    try { getCtx().resume(); } catch(_) {}
+    S.ticker = setInterval(() => {
+      S.remaining--;
+      document.getElementById('kawaiTime').textContent = fmt(S.remaining);
+      const target = Math.min(BOARD_SIZE-1, Math.floor((1 - S.remaining/S.total) * BOARD_SIZE));
+      if (target > S.kawai.currentCase) advanceKirby(target);
+      if (S.remaining === 0) { stop(); onKawaiDone(); }
+    }, 1000);
+  } else {
+    stop();
+    document.getElementById('kawaiBtn').textContent = 'GO ! 🌸';
+  }
+}
+
+function advanceKirby(target) {
+  const eating = !!FOOD_MAP[target];
+  for (let i = 0; i <= target; i++) document.getElementById(`kcase-${i}`)?.classList.add('visited');
+  placeKirby(target, eating);
+  S.kawai.currentCase = target;
+  if (eating) {
+    S.kawai.collected.push(FOOD_MAP[target]);
+    const foodEl = document.getElementById(`kfood-${target}`);
+    if (foodEl) foodEl.style.opacity = '0';
+    playKawaiChirp(); vibe([50, 30, 50]);
+    renderFoodStash();
+    setTimeout(() => placeKirby(target, false), 700);
+  }
+}
+
+function onKawaiDone() {
+  document.getElementById('kawaiTime').textContent = '00:00';
+  document.getElementById('kawaiTime').classList.add('finished');
+  document.getElementById('kawaiPhase').textContent = 'ARRIVÉE ! 🎉';
+  document.getElementById('kawaiBtn').textContent = 'RESET ✨';
+  document.getElementById('kawaiDurConfig').classList.remove('locked');
+  placeKirby(BOARD_SIZE-1);
+  playBeep([880, 1047, 1319, 1568], 0.15);
+  vibe([100, 50, 100, 50, 200]);
+  toast('🌸 KIRBY A GAGNÉ ! 🎉');
+}
+
+function resetKawai() {
+  stop();
+  document.getElementById('kawaiTime').classList.remove('finished');
+  initKawai();
+}
+
+function renderFoodStash() {
+  const stash = document.getElementById('foodStash');
+  if (!stash) return;
+  stash.innerHTML = S.kawai.collected.length === 0
+    ? '<span class="food-stash-empty">Pas encore de nourriture...</span>'
+    : S.kawai.collected.map(e => `<span class="food-emoji">${e}</span>`).join('');
+}
+
+function playKawaiChirp() {
+  try {
+    const ctx = getCtx();
+    [880, 1100, 1320].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination); o.frequency.value = f; o.type = 'sine';
+      const t = ctx.currentTime + i * 0.08;
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.18, t+0.01); g.gain.exponentialRampToValueAtTime(0.001, t+0.15);
+      o.start(t); o.stop(t+0.15);
+    });
+  } catch(_) {}
 }
 
 // ── NOTIFS
