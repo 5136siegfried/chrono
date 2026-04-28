@@ -458,6 +458,8 @@
     </div>
   </div>
 
+</main>
+
 <!-- Stats FOCUS -->
 <section class="bottom-section" id="focusStats">
   <div class="section-header">// STATS AUJOURD'HUI</div>
@@ -982,12 +984,13 @@ async function startKawaiMusic() {
   try {
     const ctx = getCtx();
     if (ctx.state === 'suspended') await ctx.resume();
-    if (ctx.state !== 'running') return;
+    if (ctx.state !== 'running') { console.warn('ctx not running:', ctx.state); return; }
     music.playing = true;
     music.nextNoteTime = ctx.currentTime + 0.15;
+    console.log('music start — ctx.state:', ctx.state, 'currentTime:', ctx.currentTime);
     schedulerTick();
     updateSongName();
-  } catch(_) {}
+  } catch(e) { console.warn('startKawaiMusic:', e); }
 }
 
 function stopKawaiMusic() {
@@ -1086,7 +1089,6 @@ function initKawai() {
   document.getElementById('kawaiDurConfig').classList.remove('locked');
   document.getElementById('kawaiDurDisplay').textContent = `${S.kawai.durMin} MIN`;
   renderFoodStash();
-  startKawaiMusic();
 }
 
 function adjustKawai(d) {
@@ -1102,6 +1104,7 @@ function toggleKawai() {
     S.running = true;
     document.getElementById('kawaiBtn').textContent = 'PAUSE 🌙';
     document.getElementById('kawaiDurConfig').classList.add('locked');
+    startKawaiMusic();
     try { getCtx().resume(); } catch(_) {}
     S.ticker = setInterval(() => {
       S.remaining--;
