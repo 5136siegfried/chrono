@@ -958,10 +958,10 @@ function schedulerTick() {
   if (!music.playing) return;
   try {
     const ctx = getCtx();
+    if (ctx.state !== 'running') { music.timerId = setTimeout(schedulerTick, 100); return; }
     const song = SONGS[music.songIdx];
-    const beatSec = 60 / song.bpm / 8; // 8th note
+    const beatSec = 60 / song.bpm / 8;
     const lookAhead = 0.12;
-
     while (music.nextNoteTime < ctx.currentTime + lookAhead) {
       const [freq, dur] = song.notes[music.noteIdx];
       if (freq > 0) scheduleNote(freq, song.wave, song.vol, music.nextNoteTime, beatSec * dur * 0.82);
@@ -973,16 +973,18 @@ function schedulerTick() {
         updateSongName();
       }
     }
-  } catch(_) {}
+  } catch(e) { console.warn('music scheduler:', e); }
   music.timerId = setTimeout(schedulerTick, 25);
 }
 
-function startKawaiMusic() {
+async function startKawaiMusic() {
   if (music.playing || music.muted) return;
   try {
-    const ctx = getCtx(); ctx.resume();
+    const ctx = getCtx();
+    if (ctx.state === 'suspended') await ctx.resume();
+    if (ctx.state !== 'running') return;
     music.playing = true;
-    music.nextNoteTime = ctx.currentTime + 0.05;
+    music.nextNoteTime = ctx.currentTime + 0.15;
     schedulerTick();
     updateSongName();
   } catch(_) {}
