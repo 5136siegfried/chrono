@@ -261,6 +261,16 @@
     @keyframes kbounce { to { transform: scale(1.08) rotate(3deg); } }
     .kawai-phase { font-family: 'Fredoka One', cursive; font-size: 0.95rem; color: #cc99b3; }
 
+    .kawai-music-row { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+    .kawai-song-name { font-family: 'Fredoka One', cursive; font-size: 0.7rem; color: #cc99b3; }
+    .kawai-mute-btn {
+      background: white; border: 2px solid #ffb7d5; border-radius: 50%;
+      width: 28px; height: 28px; font-size: 0.85rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; line-height: 1; padding: 0;
+    }
+    .kawai-mute-btn:active { transform: scale(0.88); background: #ffe4ef; }
+
     /* Board */
     .board-wrap { display: flex; flex-direction: column; align-items: center; width: 100%; }
     .board-grid {
@@ -429,6 +439,10 @@
     <div class="kawai-time-display">
       <div class="kawai-phase" id="kawaiPhase">EN ROUTE 🌸</div>
       <div class="kawai-time" id="kawaiTime">25:00</div>
+      <div class="kawai-music-row">
+        <span class="kawai-song-name" id="kawaiSongName">♪ Gourmet Race</span>
+        <button class="kawai-mute-btn" id="muteBtn" onclick="toggleMute()">🔊</button>
+      </div>
     </div>
     <div class="board-wrap" style="margin:10px 0 8px">
       <div id="kawaiBoard"></div>
@@ -534,6 +548,7 @@ const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).pad
 // ── MODE SWITCH
 function switchMode(mode) {
   if (S.running) stop();
+  if (S.mode === 'kawai' && mode !== 'kawai') stopKawaiMusic();
   S.mode = mode;
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['focus','sport','tasks','kawai'][i] === mode));
   document.body.classList.toggle('kawai', mode === 'kawai');
@@ -876,6 +891,115 @@ function updateTaskStats() {
 }
 
 // ════════════════════════════════
+// KAWAI MUSIC ENGINE
+// ════════════════════════════════
+const N = {
+  E4:330, F4:349, Fs4:370, G4:392, Gs4:415, A4:440, As4:466, B4:494,
+  C5:523, Cs5:554, D5:587, Ds5:622, E5:659, F5:698, Fs5:740, G5:784, A5:880,
+  _:0
+};
+
+const SONGS = [
+  {
+    name: '♪ Gourmet Race',
+    bpm: 188, wave: 'square', vol: 0.07,
+    notes: [
+      [N.E5,1],[N.D5,1],[N.E5,1],[N.G5,2],[N.E5,1],[N.C5,1],[N.D5,2],
+      [N.B4,1],[N.C5,1],[N.D5,1],[N.E5,1],[N.E5,2],[N.C5,1],[N.A4,3],
+      [N.G4,1],[N.A4,1],[N.B4,1],[N.C5,2],[N.A4,1],[N.G4,1],[N.A4,2],
+      [N.F4,1],[N.G4,1],[N.A4,1],[N.B4,2],[N.G4,2],[N.E4,4],
+    ]
+  },
+  {
+    name: '♪ Green Greens',
+    bpm: 132, wave: 'triangle', vol: 0.09,
+    notes: [
+      [N.A4,2],[N.G4,1],[N.A4,1],[N.E4,2],[N.A4,2],[N.C5,1],[N.B4,1],[N.A4,2],[N.G4,4],
+      [N.A4,2],[N.G4,1],[N.A4,1],[N.E4,2],[N.A4,2],[N.B4,1],[N.C5,1],[N.A4,4],
+      [N.C5,2],[N.B4,2],[N.A4,2],[N.G4,2],[N.E4,4],
+      [N.A4,2],[N.G4,1],[N.A4,1],[N.E4,2],[N.A4,2],[N.Gs4,1],[N.A4,1],[N.A4,4],
+    ]
+  },
+  {
+    name: '♪ Dedede',
+    bpm: 156, wave: 'sawtooth', vol: 0.06,
+    notes: [
+      [N.A4,2],[N.A4,2],[N.A4,2],[N.Fs4,1],[N.G4,1],[N.A4,4],
+      [N.B4,2],[N.B4,2],[N.B4,2],[N.G4,1],[N.A4,1],[N.B4,4],
+      [N.C5,2],[N.B4,2],[N.A4,2],[N.G4,2],[N.Fs4,4],
+      [N.E4,2],[N.Fs4,1],[N.G4,1],[N.A4,4],[N._,4],
+    ]
+  }
+];
+
+const music = { songIdx: 0, noteIdx: 0, nextNoteTime: 0, playing: false, muted: false, timerId: null };
+
+function scheduleNote(freq, wave, vol, startTime, duration) {
+  try {
+    const ctx = getCtx();
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = wave; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, startTime);
+    gain.gain.setValueAtTime(vol, startTime + duration * 0.75);
+    gain.gain.linearRampToValueAtTime(0, startTime + duration);
+    osc.start(startTime); osc.stop(startTime + duration);
+  } catch(_) {}
+}
+
+function schedulerTick() {
+  if (!music.playing) return;
+  try {
+    const ctx = getCtx();
+    const song = SONGS[music.songIdx];
+    const beatSec = 60 / song.bpm / 8; // 8th note
+    const lookAhead = 0.12;
+
+    while (music.nextNoteTime < ctx.currentTime + lookAhead) {
+      const [freq, dur] = song.notes[music.noteIdx];
+      if (freq > 0) scheduleNote(freq, song.wave, song.vol, music.nextNoteTime, beatSec * dur * 0.82);
+      music.nextNoteTime += beatSec * dur;
+      music.noteIdx++;
+      if (music.noteIdx >= song.notes.length) {
+        music.noteIdx = 0;
+        music.songIdx = (music.songIdx + 1) % SONGS.length;
+        updateSongName();
+      }
+    }
+  } catch(_) {}
+  music.timerId = setTimeout(schedulerTick, 25);
+}
+
+function startKawaiMusic() {
+  if (music.playing || music.muted) return;
+  try {
+    const ctx = getCtx(); ctx.resume();
+    music.playing = true;
+    music.nextNoteTime = ctx.currentTime + 0.05;
+    schedulerTick();
+    updateSongName();
+  } catch(_) {}
+}
+
+function stopKawaiMusic() {
+  music.playing = false;
+  if (music.timerId) { clearTimeout(music.timerId); music.timerId = null; }
+}
+
+function toggleMute() {
+  music.muted = !music.muted;
+  const btn = document.getElementById('muteBtn');
+  if (btn) btn.textContent = music.muted ? '🔇' : '🔊';
+  if (music.muted) stopKawaiMusic();
+  else if (S.mode === 'kawai') startKawaiMusic();
+}
+
+function updateSongName() {
+  const el = document.getElementById('kawaiSongName');
+  if (el) el.textContent = SONGS[music.songIdx].name;
+}
+
+// ════════════════════════════════
 // KAWAI
 // ════════════════════════════════
 S.kawai = { durMin: 25, currentCase: 0, collected: [] };
@@ -953,6 +1077,7 @@ function initKawai() {
   document.getElementById('kawaiDurConfig').classList.remove('locked');
   document.getElementById('kawaiDurDisplay').textContent = `${S.kawai.durMin} MIN`;
   renderFoodStash();
+  startKawaiMusic();
 }
 
 function adjustKawai(d) {
