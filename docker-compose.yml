@@ -1,0 +1,7 @@
+services:
+  chrono:
+    build: .
+    container_name: chrono
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3002:80"   # écoute uniquement en local, Nginx proxifie

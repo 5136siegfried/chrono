@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CHRONO">
+  <link rel="manifest" href="manifest.json">
+  <title>CHRONO — FOCUS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050508;
+      --surface: #0c0c18;
+      --border: #16162a;
+      --cyan: #00f5d4;
+      --magenta: #ff006e;
+      --yellow: #ffd60a;
+      --text: #dde0ff;
+      --dim: #3a3a60;
+      --dim2: #5a5a90;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,245,212,0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 80% 100%, rgba(255,0,110,0.04) 0%, transparent 60%);
+    }
+
+    /* Scanlines */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,0.12) 3px,
+        rgba(0,0,0,0.12) 4px
+      );
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* Vignette */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.75) 100%);
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    /* ── HEADER */
+    .header {
+      width: 100%;
+      padding: 18px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-shrink: 0;
+    }
+
+    .title {
+      font-family: 'Orbitron', monospace;
+      font-weight: 900;
+      font-size: 1.3rem;
+      letter-spacing: 0.35em;
+      color: var(--cyan);
+      text-shadow: 0 0 12px var(--cyan), 0 0 40px rgba(0,245,212,0.25);
+      animation: glitch 10s infinite;
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .version {
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      color: var(--dim);
+    }
+
+    .notif-status {
+      font-size: 0.5rem;
+      letter-spacing: 0.15em;
+      color: var(--dim);
+      margin-top: 3px;
+      cursor: pointer;
+    }
+
+    .notif-status.granted { color: var(--cyan); }
+
+    @keyframes glitch {
+      0%, 87%, 94%, 100% {
+        text-shadow: 0 0 12px var(--cyan), 0 0 40px rgba(0,245,212,0.25);
+        transform: none;
+      }
+      88% { text-shadow: -3px 0 var(--magenta), 3px 0 var(--cyan); transform: translateX(3px); }
+      89% { text-shadow: 3px 0 var(--magenta), -3px 0 var(--cyan); transform: translateX(-3px); }
+      90% { text-shadow: 0 0 12px var(--cyan); transform: none; }
+      91% { text-shadow: -1px 0 var(--magenta); transform: translateX(1px); }
+      92% { text-shadow: 0 0 12px var(--cyan), 0 0 40px rgba(0,245,212,0.25); transform: none; }
+    }
+
+    /* ── TIMER SECTION */
+    .timer-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 8px 24px;
+      min-height: 0;
+    }
+
+    .circle-wrapper {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      flex-shrink: 0;
+    }
+
+    .circle-svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .circle-bg {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 5;
+    }
+
+    .circle-track {
+      fill: none;
+      stroke: var(--dim);
+      stroke-width: 1;
+      stroke-dasharray: 4 12;
+      opacity: 0.4;
+    }
+
+    .circle-progress {
+      fill: none;
+      stroke: var(--cyan);
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-dasharray: 753.98;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1s linear, stroke 0.4s ease;
+      filter: drop-shadow(0 0 6px var(--cyan)) drop-shadow(0 0 14px rgba(0,245,212,0.35));
+    }
+
+    .circle-progress.warning {
+      stroke: var(--yellow);
+      filter: drop-shadow(0 0 6px var(--yellow)) drop-shadow(0 0 14px rgba(255,214,10,0.35));
+    }
+
+    .circle-progress.critical {
+      stroke: var(--magenta);
+      filter: drop-shadow(0 0 6px var(--magenta)) drop-shadow(0 0 14px rgba(255,0,110,0.35));
+      animation: pulse-ring 0.6s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse-ring {
+      to { filter: drop-shadow(0 0 12px var(--magenta)) drop-shadow(0 0 28px rgba(255,0,110,0.5)); }
+    }
+
+    .timer-display {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .timer-phase {
+      font-size: 0.55rem;
+      letter-spacing: 0.35em;
+      color: var(--dim2);
+      text-transform: uppercase;
+    }
+
+    .timer-time {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 3rem;
+      letter-spacing: 0.04em;
+      color: var(--text);
+      text-shadow: 0 0 24px rgba(220,224,255,0.4);
+      line-height: 1;
+    }
+
+    .timer-time.finished {
+      color: var(--magenta);
+      text-shadow: 0 0 20px var(--magenta);
+      animation: blink 0.45s ease-in-out infinite alternate;
+    }
+
+    @keyframes blink {
+      to { opacity: 0.3; }
+    }
+
+    .timer-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--dim2);
+    }
+
+    /* ── DURATION CONFIG */
+    .duration-config {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: opacity 0.3s;
+    }
+
+    .duration-config.locked {
+      opacity: 0.25;
+      pointer-events: none;
+    }
+
+    .dur-btn {
+      background: none;
+      border: 1px solid var(--dim);
+      color: var(--dim2);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.1rem;
+      width: 34px;
+      height: 34px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+
+    .dur-btn:active {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      background: rgba(0,245,212,0.08);
+    }
+
+    .dur-display {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.9rem;
+      letter-spacing: 0.12em;
+      color: var(--dim2);
+      min-width: 70px;
+      text-align: center;
+    }
+
+    /* ── CONTROLS */
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn-main {
+      background: transparent;
+      border: 2px solid var(--cyan);
+      color: var(--cyan);
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 0.8rem;
+      letter-spacing: 0.25em;
+      padding: 13px 44px;
+      border-radius: 2px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.2s, box-shadow 0.2s;
+      text-shadow: 0 0 8px var(--cyan);
+      box-shadow: 0 0 10px rgba(0,245,212,0.15), inset 0 0 10px rgba(0,245,212,0.04);
+    }
+
+    .btn-main::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(0,245,212,0.12) 50%, transparent 100%);
+      transform: translateX(-100%);
+      transition: transform 0.4s;
+    }
+
+    .btn-main:active::after { transform: translateX(100%); }
+    .btn-main:active {
+      background: rgba(0,245,212,0.08);
+      box-shadow: 0 0 20px rgba(0,245,212,0.35), inset 0 0 16px rgba(0,245,212,0.08);
+    }
+
+    .btn-main.pausing {
+      border-color: var(--yellow);
+      color: var(--yellow);
+      text-shadow: 0 0 8px var(--yellow);
+      box-shadow: 0 0 10px rgba(255,214,10,0.15), inset 0 0 10px rgba(255,214,10,0.04);
+    }
+
+    .btn-reset {
+      background: none;
+      border: 1px solid var(--dim);
+      color: var(--dim2);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      padding: 13px 18px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-reset:active {
+      border-color: var(--magenta);
+      color: var(--magenta);
+    }
+
+    /* ── STATS */
+    .stats-section {
+      width: 100%;
+      padding: 14px 20px 28px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .stats-header {
+      font-size: 0.55rem;
+      letter-spacing: 0.3em;
+      color: var(--dim);
+      margin-bottom: 12px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 10px 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 2px; height: 100%;
+      background: linear-gradient(180deg, var(--cyan), transparent);
+    }
+
+    .stat-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--cyan);
+      line-height: 1.1;
+    }
+
+    .stat-lbl {
+      font-size: 0.5rem;
+      letter-spacing: 0.15em;
+      color: var(--dim2);
+      margin-top: 3px;
+      text-transform: uppercase;
+    }
+
+    /* ── TOAST */
+    .toast {
+      position: fixed;
+      top: 64px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-6px);
+      background: var(--surface);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      padding: 9px 20px;
+      border-radius: 2px;
+      box-shadow: 0 0 20px rgba(0,245,212,0.25);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+      white-space: nowrap;
+      z-index: 200;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toast" id="toast"></div>
+
+  <header class="header">
+    <div class="title">CHRONO</div>
+    <div class="header-right">
+      <div class="version">V1.0 — FOCUS TIMER</div>
+      <div class="notif-status" id="notifStatus" onclick="askNotifPermission()">⬤ NOTIFS —</div>
+    </div>
+  </header>
+
+  <main class="timer-section">
+
+    <div class="circle-wrapper">
+      <svg class="circle-svg" viewBox="0 0 260 260">
+        <circle class="circle-bg" cx="130" cy="130" r="120"/>
+        <circle class="circle-track" cx="130" cy="130" r="120"/>
+        <circle class="circle-progress" id="ring" cx="130" cy="130" r="120"/>
+        <g id="ticks"></g>
+      </svg>
+      <div class="timer-display">
+        <div class="timer-phase" id="phase">SESSION</div>
+        <div class="timer-time" id="timerTime">25:00</div>
+        <div class="timer-label" id="timerLabel">PRÊT</div>
+      </div>
+    </div>
+
+    <div class="duration-config" id="durConfig">
+      <button class="dur-btn" onclick="adjustDur(-5)">−</button>
+      <div class="dur-display" id="durDisplay">25 MIN</div>
+      <button class="dur-btn" onclick="adjustDur(+5)">+</button>
+    </div>
+
+    <div class="controls">
+      <button class="btn-main" id="mainBtn" onclick="toggle()">START</button>
+      <button class="btn-reset" onclick="reset()">RESET</button>
+    </div>
+
+  </main>
+
+  <section class="stats-section">
+    <div class="stats-header">// STATS AUJOURD'HUI</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val" id="sTotal">0</div>
+        <div class="stat-lbl">Sessions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="sDone">0</div>
+        <div class="stat-lbl">Complétées</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="sTime">0m</div>
+        <div class="stat-lbl">Focus</div>
+      </div>
+    </div>
+  </section>
+
+<script>
+  // ── Constants
+  const CIRC = 2 * Math.PI * 120; // ≈ 753.98
+
+  // ── State
+  let durMin = 25;
+  let totalSec = durMin * 60;
+  let remaining = totalSec;
+  let ticker = null;
+  let running = false;
+  let audioCtx = null;
+
+  // ── DOM refs
+  const $time   = document.getElementById('timerTime');
+  const $label  = document.getElementById('timerLabel');
+  const $phase  = document.getElementById('phase');
+  const $ring   = document.getElementById('ring');
+  const $btn    = document.getElementById('mainBtn');
+  const $dur    = document.getElementById('durDisplay');
+  const $config = document.getElementById('durConfig');
+
+  // ── Tick marks
+  (() => {
+    const g = document.getElementById('ticks');
+    for (let i = 0; i < 60; i++) {
+      const a = (i / 60) * Math.PI * 2;
+      const major = i % 5 === 0;
+      const r1 = major ? 108 : 113;
+      const x1 = 130 + r1 * Math.cos(a), y1 = 130 + r1 * Math.sin(a);
+      const x2 = 130 + 117 * Math.cos(a), y2 = 130 + 117 * Math.sin(a);
+      const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+      l.setAttribute('x1',x1); l.setAttribute('y1',y1);
+      l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+      l.setAttribute('stroke', major ? '#222244' : '#141428');
+      l.setAttribute('stroke-width', major ? '2' : '1');
+      g.appendChild(l);
+    }
+  })();
+
+  // ── Format mm:ss
+  function fmt(s) {
+    return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  }
+
+  // ── Update ring visuals
+  function updateRing() {
+    const ratio = remaining / totalSec;
+    $ring.style.strokeDashoffset = CIRC * (1 - ratio);
+    $ring.classList.remove('warning','critical');
+    if (ratio <= 0.1) $ring.classList.add('critical');
+    else if (ratio <= 0.25) $ring.classList.add('warning');
+    $time.textContent = fmt(remaining);
+  }
+
+  // ── Audio
+  function getCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function playDone() {
+    try {
+      const ctx = getCtx();
+      [440, 554, 659, 880].forEach((f, i) => {
+        const osc = ctx.createOscillator(), g = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.frequency.value = f; osc.type = 'sine';
+        const t = ctx.currentTime + i * 0.2;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.28, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+        osc.start(t); osc.stop(t + 0.45);
+      });
+    } catch(_) {}
+  }
+
+  // ── Toast
+  function toast(msg, dur = 2800) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), dur);
+  }
+
+  // ── Duration adjust
+  function adjustDur(d) {
+    if (running) return;
+    durMin = Math.max(1, Math.min(180, durMin + d));
+    totalSec = durMin * 60;
+    remaining = totalSec;
+    $dur.textContent = `${durMin} MIN`;
+    $label.textContent = 'PRÊT';
+    $time.classList.remove('finished');
+    updateRing();
+  }
+
+  // ── Toggle start/pause
+  function toggle() {
+    if (remaining === 0) { reset(); return; }
+
+    if (!running) {
+      running = true;
+      $btn.textContent = 'PAUSE';
+      $btn.classList.add('pausing');
+      $label.textContent = 'EN COURS';
+      $config.classList.add('locked');
+      try { getCtx().resume(); } catch(_) {}
+
+      ticker = setInterval(() => {
+        remaining--;
+        updateRing();
+        if (remaining === 0) { clearInterval(ticker); running = false; onDone(); }
+      }, 1000);
+    } else {
+      clearInterval(ticker); running = false;
+      $btn.textContent = 'REPRENDRE';
+      $btn.classList.remove('pausing');
+      $label.textContent = 'PAUSE';
+    }
+  }
+
+  // ── On timer done
+  function onDone() {
+    $time.classList.add('finished');
+    $label.textContent = 'TERMINÉ ✓';
+    $btn.textContent = 'RESET';
+    $btn.classList.remove('pausing');
+    $config.classList.remove('locked');
+
+    playDone();
+    if (navigator.vibrate) navigator.vibrate([200,100,200,100,400]);
+    saveSession(true);
+    sendNotif(`⏱ ${durMin}min de focus — complétées`, 'Bien joué. Prends une pause.');
+    toast(`SESSION ${durMin}MIN — COMPLÉTÉE ✓`);
+  }
+
+  // ── Reset
+  function reset() {
+    clearInterval(ticker); running = false;
+    remaining = totalSec;
+    $time.classList.remove('finished');
+    $btn.textContent = 'START';
+    $btn.classList.remove('pausing');
+    $label.textContent = 'PRÊT';
+    $config.classList.remove('locked');
+    updateRing();
+  }
+
+  // ── Stats (localStorage)
+  function getStats() { return JSON.parse(localStorage.getItem('chrono_v1') || '[]'); }
+
+  function saveSession(done) {
+    const s = getStats();
+    s.push({ ts: Date.now(), durMin, done });
+    localStorage.setItem('chrono_v1', JSON.stringify(s));
+    renderStats();
+  }
+
+  function renderStats() {
+    const all = getStats();
+    const today = new Date().toDateString();
+    const tod = all.filter(s => new Date(s.ts).toDateString() === today);
+    const done = tod.filter(s => s.done).length;
+    const mins = tod.reduce((a, s) => a + s.durMin, 0);
+    document.getElementById('sTotal').textContent = tod.length;
+    document.getElementById('sDone').textContent  = done;
+    const h = Math.floor(mins/60), m = mins%60;
+    document.getElementById('sTime').textContent  = h ? `${h}h${m}` : `${m}m`;
+  }
+
+  // ── Notifications
+  function updateNotifStatus() {
+    const el = document.getElementById('notifStatus');
+    if (!('Notification' in window)) { el.textContent = '⬤ NOTIFS — N/A'; return; }
+    const p = Notification.permission;
+    el.textContent = p === 'granted' ? '⬤ NOTIFS — ON' : p === 'denied' ? '⬤ NOTIFS — OFF' : '⬤ NOTIFS — TAP';
+    el.className = 'notif-status' + (p === 'granted' ? ' granted' : '');
+  }
+
+  async function askNotifPermission() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') {
+      await Notification.requestPermission();
+      updateNotifStatus();
+    }
+  }
+
+  function sendNotif(title, body) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(title, { body, icon: '/icon-192.png' });
+    }
+  }
+
+  // ── Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+
+  // ── Init
+  updateRing();
+  renderStats();
+  updateNotifStatus();
+</script>
+</body>
+</html>
