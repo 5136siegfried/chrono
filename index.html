@@ -238,6 +238,13 @@
       white-space: nowrap; z-index: 200;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    /* FOOTER */
+    #appFooter { width:100%; text-align:center; padding:6px 0 10px; flex-shrink:0; }
+    #footerLink { font-family:'Share Tech Mono',monospace; font-size:0.48rem; letter-spacing:0.2em; color:var(--dim); text-decoration:none; transition:color 0.2s; }
+    #footerLink:hover { color:var(--cyan); }
+    body.kawai #footerLink { color:#cc99b3; }
+    body.kawai #footerLink:hover { color:#ff69b4; }
+
     /* ── KAWAI MODE */
     body.kawai { background: #fff5f8 !important; background-image: none !important; }
     body.kawai::before, body.kawai::after { display: none; }
@@ -497,14 +504,13 @@
   </div>
 </section>
 
-<footer style="width:100%;text-align:center;padding:6px 0 10px;flex-shrink:0">
-  <a href="https://github.com/5136siegfried/chrono" target="_blank"
-     style="font-family:'Share Tech Mono',monospace;font-size:0.48rem;letter-spacing:0.2em;
-            color:var(--dim);text-decoration:none;transition:color 0.2s"
-     onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--dim)'">
+<footer id="appFooter">
+  <a href="https://github.com/TON_REPO_ICI" target="_blank" id="footerLink">
     ⌥ SIEGFRIED SEKKAI — OPEN SOURCE
   </a>
 </footer>
+
+<script>
 // ── CONSTANTS
 const CIRC = 2 * Math.PI * 105; // ≈ 659.73
 
@@ -911,32 +917,20 @@ const N = {
 const SONGS = [
   {
     name: '♪ Gourmet Race',
-    bpm: 188, wave: 'square', vol: 0.07,
+    bpm: 180, wave: 'square', vol: 0.07,
     notes: [
+      // Phrase A
       [N.E5,1],[N.D5,1],[N.E5,1],[N.G5,2],[N.E5,1],[N.C5,1],[N.D5,2],
       [N.B4,1],[N.C5,1],[N.D5,1],[N.E5,1],[N.E5,2],[N.C5,1],[N.A4,3],
+      // Phrase B
       [N.G4,1],[N.A4,1],[N.B4,1],[N.C5,2],[N.A4,1],[N.G4,1],[N.A4,2],
       [N.F4,1],[N.G4,1],[N.A4,1],[N.B4,2],[N.G4,2],[N.E4,4],
-    ]
-  },
-  {
-    name: '♪ Green Greens',
-    bpm: 132, wave: 'triangle', vol: 0.09,
-    notes: [
-      [N.A4,2],[N.G4,1],[N.A4,1],[N.E4,2],[N.A4,2],[N.C5,1],[N.B4,1],[N.A4,2],[N.G4,4],
-      [N.A4,2],[N.G4,1],[N.A4,1],[N.E4,2],[N.A4,2],[N.B4,1],[N.C5,1],[N.A4,4],
-      [N.C5,2],[N.B4,2],[N.A4,2],[N.G4,2],[N.E4,4],
-      [N.A4,2],[N.G4,1],[N.A4,1],[N.E4,2],[N.A4,2],[N.Gs4,1],[N.A4,1],[N.A4,4],
-    ]
-  },
-  {
-    name: '♪ Dedede',
-    bpm: 156, wave: 'sawtooth', vol: 0.06,
-    notes: [
-      [N.A4,2],[N.A4,2],[N.A4,2],[N.Fs4,1],[N.G4,1],[N.A4,4],
-      [N.B4,2],[N.B4,2],[N.B4,2],[N.G4,1],[N.A4,1],[N.B4,4],
-      [N.C5,2],[N.B4,2],[N.A4,2],[N.G4,2],[N.Fs4,4],
-      [N.E4,2],[N.Fs4,1],[N.G4,1],[N.A4,4],[N._,4],
+      // Phrase A bis
+      [N.E5,1],[N.D5,1],[N.E5,1],[N.G5,2],[N.E5,1],[N.C5,1],[N.D5,2],
+      [N.B4,1],[N.C5,1],[N.D5,1],[N.E5,1],[N.C5,2],[N.A4,1],[N.G4,3],
+      // Phrase C
+      [N.A4,1],[N.B4,1],[N.C5,1],[N.E5,2],[N.D5,1],[N.C5,1],[N.B4,2],
+      [N.A4,1],[N.G4,1],[N.A4,1],[N.B4,2],[N.A4,2],[N.G4,4],
     ]
   }
 ];
@@ -962,8 +956,8 @@ function schedulerTick() {
     const ctx = getCtx();
     if (ctx.state !== 'running') { music.timerId = setTimeout(schedulerTick, 100); return; }
     const song = SONGS[music.songIdx];
-    const beatSec = 60 / song.bpm / 8;
-    const lookAhead = 0.12;
+    const beatSec = 60 / song.bpm / 2; // 8th note duration (fix: was /8)
+    const lookAhead = 0.15;
     while (music.nextNoteTime < ctx.currentTime + lookAhead) {
       const [freq, dur] = song.notes[music.noteIdx];
       if (freq > 0) scheduleNote(freq, song.wave, song.vol, music.nextNoteTime, beatSec * dur * 0.82);
